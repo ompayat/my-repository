@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql import text
+
 
 app = Flask(__name__)
 
@@ -8,8 +10,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./email.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+app.app_context().push()
+
+
 # - drop users table if exists, create new users table and add some rows for sample
-drop_table = 'DROP TABLE IF EXISTS users;'
+drop_table = "DROP TABLE IF EXISTS users;"
 users_table = """ 
 CREATE TABLE users(
 username VARCHAR NOT NULL PRIMARY KEY,
@@ -27,9 +32,9 @@ VALUES
 
 
 # - Execute sql commands and commit them
-db.session.execute(drop_table)
-db.session.execute(users_table)
-db.session.execute(data)
+db.session.execute(text(drop_table))
+db.session.execute(text(users_table))
+db.session.execute(text(data))
 db.session.commit()
 
 # - Write a function named `find_emails` which find emails using keyword from the user table in the db,
@@ -38,7 +43,7 @@ def find_emails(keyword):
     query = f"""
     SELECT * FROM users WHERE username like '%{keyword}%';
     """
-    result = db.session.execute(query)
+    result = db.session.execute(text(query))
     user_emails = [(row[0], row[1]) for row in result]
     if not any(user_emails):
         user_emails = [("Not Found", "Not Found")]
@@ -50,7 +55,7 @@ def insert_email(name,email):
     query = f"""
     SELECT * FROM users WHERE username like '{name}'
     """
-    result = db.session.execute(query)
+    result = db.session.execute(text(query))
     response = ''
     if len(name) == 0 or len(email) == 0:
         response = 'Username or email can not be empty!!'
@@ -59,7 +64,7 @@ def insert_email(name,email):
         INSERT INTO users
         VALUES ('{name}', '{email}');
         """
-        result = db.session.execute(insert)
+        result = db.session.execute(text(insert))
         db.session.commit()
         response = f"User {name} and {email} have been added successfully"
     else:
